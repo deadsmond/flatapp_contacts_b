@@ -49,7 +49,7 @@ class _FlatAppMainState extends State<ContactsRoute> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('FlatApp: contacts list'),
+        title: Text('FlatApp: ranodm app'),
         actions: <Widget>[
           new IconButton(
             icon: new Icon(Icons.close),
