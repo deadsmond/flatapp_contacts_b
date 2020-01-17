@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../storages/ContentStorage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 
@@ -18,8 +18,8 @@ class ContactsRoute extends StatefulWidget {
 class _FlatAppMainState extends State<ContactsRoute> {
   //---------------------------- VARIABLES -------------------------------------
   // var to store contacts
-  ContentStorage storageContent = ContentStorage();
   String _data;
+  String key = 'CONTACT_SAVED';
 
   //---------------------------- INIT ------------------------------------------
   @override
@@ -38,9 +38,19 @@ class _FlatAppMainState extends State<ContactsRoute> {
     print('Response body: ${response.body}');
   }
 
+  Future<String> readShared(String key) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if(prefs.containsKey(key)){
+      //get String
+      return prefs.getString(key);
+    } else {
+      return "no contacts loaded";
+    }
+  }
+
   void _operateContacts() async {
     // restore contacts
-    _data = await storageContent.readContent("CONTACTS_COPY");
+    _data = await readShared(key);
     sendRequest();
   }
 
@@ -49,7 +59,7 @@ class _FlatAppMainState extends State<ContactsRoute> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('FlatApp: ranodm app'),
+        title: Text('FlatApp: random app'),
         actions: <Widget>[
           new IconButton(
             icon: new Icon(Icons.close),
@@ -58,9 +68,39 @@ class _FlatAppMainState extends State<ContactsRoute> {
           ),
         ],
       ),
+
       body: _data != null
           ? Text('H A C K E D' ?? '')
           : CircularProgressIndicator(),
+
+      bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.not_interested),
+              title: Text('Exit'),
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.exit_to_app),
+              title: Text('Load data'),
+            ),
+          ],
+          // operate NavigationBar
+          onTap: (index) {
+            // operate NavigationBar
+            switch (index) {
+              case 0:
+              // EXIT --------------------------------------------------------
+              // exit app - this is preferred way
+                SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                break;
+              case 1:
+                print("Sending contact...");
+                _operateContacts();
+                break;
+            // -----------------------------------------------------------------
+            }
+          }
+      ),
     );
   }
 }
