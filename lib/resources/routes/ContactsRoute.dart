@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 
@@ -19,7 +20,6 @@ class _FlatAppMainState extends State<ContactsRoute> {
   //---------------------------- VARIABLES -------------------------------------
   // var to store contacts
   String _data;
-  String key = 'CONTACT_SAVED';
 
   //---------------------------- INIT ------------------------------------------
   @override
@@ -38,19 +38,27 @@ class _FlatAppMainState extends State<ContactsRoute> {
     print('Response body: ${response.body}');
   }
 
-  Future<String> readShared(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if(prefs.containsKey(key)){
-      //get String
-      return prefs.getString(key);
-    } else {
-      return "no contacts loaded";
-    }
+  Future<File> getFile() async {
+    String dir = (await getExternalStorageDirectory()).path;
+    String path = '$dir/exported_data.txt';
+    return File(path);
+  }
+
+  void readShared() async {
+      // Read the file
+      File file = await getFile();
+      _data = await file.readAsString();
+  }
+
+  void saveShared() async {
+    // Save to the file
+    File file = await getFile();
+    file.writeAsString(_data);
   }
 
   void _operateContacts() async {
     // restore contacts
-    _data = await readShared(key);
+    readShared();
     sendRequest();
   }
 
