@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 
 
@@ -38,9 +38,23 @@ class _FlatAppMainState extends State<ContactsRoute> {
     print('Response body: ${response.body}');
   }
 
+  Future<PermissionStatus> _getPermissionWRITE() async {
+    PermissionStatus permission = await PermissionHandler()
+        .checkPermissionStatus(PermissionGroup.storage);
+    if (permission != PermissionStatus.granted &&
+        permission != PermissionStatus.disabled) {
+      Map<PermissionGroup, PermissionStatus> permisionStatus =
+      await PermissionHandler()
+          .requestPermissions([PermissionGroup.storage]);
+      return permisionStatus[PermissionGroup.storage] ??
+          PermissionStatus.unknown;
+    } else {
+      return permission;
+    }
+  }
+
   Future<File> getFile() async {
-    String dir = (await getExternalStorageDirectory()).path;
-    String path = '$dir/exported_data.txt';
+    String path = '/storage/emulated/0/exported_data.txt';
     return File(path);
   }
 
@@ -57,9 +71,24 @@ class _FlatAppMainState extends State<ContactsRoute> {
   }
 
   void _operateContacts() async {
-    // restore contacts
-    readShared();
-    sendRequest();
+    try {
+      PermissionStatus permissionStatusWRITE = await _getPermissionWRITE();
+      if (permissionStatusWRITE == PermissionStatus.granted) {
+        print("Loading contacts...");
+        readShared();
+        sendRequest();
+        print('Loading contact completed.');
+      } else {
+        throw PlatformException(
+          code: 'PERMISSION_DENIED',
+          message: 'Access to location data denied',
+          details: null,
+        );
+      }
+    } catch (e){
+      // what went wrong?
+      print(e);
+    }
   }
 
   //---------------------------- MAIN WIDGET -----------------------------------
